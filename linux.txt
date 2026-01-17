@@ -1,0 +1,834 @@
+# 1) FCFS
+
+#!/bin/bash
+
+echo -n "enter the process num:"
+read n
+
+declare -a BT WT TAT
+
+#enter burst time
+for((i=0;i<n;i++))
+do
+	echo -n "enter burst time for P$((i)):"
+	read BT[i]
+done
+
+#calculate WT TAT
+WT[0]=0
+TAT[0]=${BT[0]}
+
+for((i=1;i<n;i++))
+do
+	WT[i]=$((WT[i-1]+BT[i-1]))
+	TAT[i]=$((WT[i]+BT[i]))
+done
+
+#display
+
+echo -e "\nProcess \t BT \t WT \t TAT"
+totat_WT=0
+total_TAT=0
+
+for((i=0;i<n;i++))
+do 
+	echo -e "P$((i)) \t\t ${BT[i]} \t ${WT[i]} \t ${TAT[i]}"
+	total_WT=$((total_WT+WT[i]))
+	total_TAT=$((total_TAT+TAT[i]))
+done
+
+avg_WT=$(echo "scale=2; $total_WT/$n" |bc)
+avg_TAT=$(echo "scale=2; $total_TAT/$n" |bc)
+
+echo -e "avg WT= $avg_WT"
+echo "avg TAT=$avg_TAT"
+
+# 2)SJF
+
+#!/bin/bash
+
+echo -n "Enter number of processes: "
+read n
+
+declare -a PID BT WT TAT
+
+# Initialize PID
+for ((i=0; i<n; i++))
+do
+    PID[i]=$i
+done
+
+# Input BT
+for ((i=0; i<n; i++))
+do
+    echo -n "Enter the BT for P$((i)): "
+    read BT[i]
+done
+
+# Sorting processes by BT (SJF)
+for ((i=0; i<n-1; i++))
+do
+    for ((j=i+1; j<n; j++))
+    do
+        if [ ${BT[i]} -gt ${BT[j]} ]; then
+            # Swap BT
+            temp=${BT[i]}
+            BT[i]=${BT[j]}
+            BT[j]=$temp
+            # Swap PID
+            temp=${PID[i]}
+            PID[i]=${PID[j]}
+            PID[j]=$temp
+        fi
+    done
+done
+
+# Calculate WT
+WT[0]=0
+for ((i=1; i<n; i++))
+do
+    WT[i]=$((WT[i-1] + BT[i-1]))
+done
+
+# Calculate TAT
+for ((i=0; i<n; i++))
+do
+    TAT[i]=$((WT[i] + BT[i]))
+done
+
+# Display table
+echo -e "\nProcess\tBT\tWT\tTAT"
+total_WT=0
+total_TAT=0
+for ((i=0; i<n; i++))
+do
+    echo -e "P${PID[i]}\t${BT[i]}\t${WT[i]}\t${TAT[i]}"
+    total_WT=$(( total_WT + WT[i] ))
+    total_TAT=$(( total_TAT + TAT[i] ))
+done
+
+# Calculate averages
+avg_WT=$(echo "scale=2; $total_WT / $n" | bc)
+avg_TAT=$(echo "scale=2; $total_TAT / $n" | bc)
+
+echo -e "\nAverage Waiting Time = $avg_WT"
+echo "Average Turnaround Time = $avg_TAT"
+
+
+3) RR
+
+#!/bin/bash
+
+echo -n "Enter the number of processes: "
+read n
+
+declare -a pid bt rt wt tat
+
+# Input burst times
+for ((i=0; i<n; i++))
+do
+    pid[i]=$((i+1))
+    echo -n "Enter Burst Time for process $((i+1)): "
+    read bt[i]
+    rt[i]=${bt[i]}
+    wt[i]=0
+    tat[i]=0
+done
+
+# Input time quantum
+echo -n "Enter the size of time slice: "
+read tq
+
+# Round Robin Logic
+time=0
+remain=$n
+
+while (( remain > 0 ))
+do
+    for ((i=0; i<n; i++))
+    do
+        if (( rt[i] > 0 ))
+        then
+            if (( rt[i] > tq ))
+            then
+                time=$((time + tq))
+                rt[i]=$((rt[i] - tq))
+            else
+                time=$((time + rt[i]))
+                wt[i]=$((time - bt[i]))
+                rt[i]=0
+                tat[i]=$((bt[i] + wt[i]))
+                remain=$((remain - 1))
+            fi
+        fi
+    done
+done
+
+# Output
+echo -e "\nOUTPUT:"
+echo -e "PROCESS\tBURST TIME\tWAITING TIME\tTURNAROUND TIME"
+
+total_wt=0
+total_tat=0
+for ((i=0; i<n; i++))
+do
+    echo -e "${pid[i]}\t${bt[i]}\t\t${wt[i]}\t\t${tat[i]}"
+    total_wt=$((total_wt + wt[i]))
+    total_tat=$((total_tat + tat[i]))
+done
+
+# Averages with decimals
+avg_wt=$(echo "scale=2; $total_wt / $n" | bc)
+avg_tat=$(echo "scale=2; $total_tat / $n" | bc)
+
+echo -e "\nAverage Turnaround Time = $avg_tat"
+echo -e "Average Waiting Time    = $avg_wt"
+
+4) Priority
+
+#!/bin/bash
+
+echo -n "Enter the number of processes -- "
+read n
+
+declare -a BT PR PID WT TAT
+
+# Input burst time and priority
+for (( i=0; i<n; i++ ))
+do
+    echo -n "Enter the Burst Time & Priority of Process $i --- "
+    read BT[i] PR[i]
+    PID[i]=$i
+done
+
+# Sort based on priority (lower number = higher priority)
+for (( i=0; i<n-1; i++ ))
+do
+    for (( j=i+1; j<n; j++ ))
+    do
+        if (( PR[i] > PR[j] ))
+        then
+            # Swap priority
+            temp=${PR[i]}
+            PR[i]=${PR[j]}
+            PR[j]=$temp
+
+            # Swap burst time
+            temp=${BT[i]}
+            BT[i]=${BT[j]}
+            BT[j]=$temp
+
+            # Swap process ID
+            temp=${PID[i]}
+            PID[i]=${PID[j]}
+            PID[j]=$temp
+        fi
+    done
+done
+
+WT[0]=0
+TAT[0]=${BT[0]}
+totalWT=0
+totalTAT=${TAT[0]}
+
+# Calculate WT and TAT
+for (( i=1; i<n; i++ ))
+do
+    WT[i]=$(( WT[i-1] + BT[i-1] ))
+    TAT[i]=$(( WT[i] + BT[i] ))
+    totalWT=$(( totalWT + WT[i] ))
+    totalTAT=$(( totalTAT + TAT[i] ))
+done
+
+echo -e "\nOUTPUT\n"
+echo -e "PROCESS\tPRIORITY\tBURST TIME\tWAITING TIME\tTURNAROUND TIME"
+for (( i=0; i<n; i++ ))
+do
+    echo -e "${PID[i]}\t${PR[i]}\t\t${BT[i]}\t\t${WT[i]}\t\t${TAT[i]}"
+done
+
+avgWT=$(echo "scale=6; $totalWT / $n" | bc)
+avgTAT=$(echo "scale=6; $totalTAT / $n" | bc)
+
+echo -e "\nAverage Waiting Time is --- $avgWT"
+echo -e "Average Turnaround Time is --- $avgTAT"
+
+
+5)dining
+
+#!/bin/bash
+
+read -p "Enter total philosophers: " n
+read -p "How many are hungry: " h
+
+hungry=()
+for ((i=0; i<h; i++)); do
+    read -p "Enter philosopher $((i+1)) position: " hungry[$i]
+done
+
+while true; do
+    echo -e "\n1.One can eat\t2.Two can eat\t3.Exit"
+    read -p "Enter choice: " choice
+
+    case $choice in
+        1) limit=1 ;;
+        2) limit=2 ;;
+        3) echo "Exiting..."; exit ;;
+        *) echo "Invalid choice"; continue ;;
+    esac
+
+    chopstick=()
+    done=()
+    for ((i=1; i<=n; i++)); do
+        chopstick[$i]=1
+        done[$i]=0
+    done
+
+    total_done=0
+    while [ $total_done -lt $h ]; do
+        granted=0
+        for p in "${hungry[@]}"; do
+            if [ ${done[$p]} -eq 1 ]; then
+                continue
+            fi
+            r=$(( (p % n) + 1 ))
+            if [ $granted -ge $limit ]; then
+                echo "P $p is waiting"
+            elif [ ${chopstick[$p]} -eq 1 ] && [ ${chopstick[$r]} -eq 1 ]; then
+                chopstick[$p]=0
+                chopstick[$r]=0
+                echo "P $p is eating"
+                chopstick[$p]=1
+                chopstick[$r]=1
+                done[$p]=1
+                total_done=$((total_done+1))
+                granted=$((granted+1))
+            else
+                echo "P $p is waiting"
+            fi
+        done
+        if [ $granted -eq 0 ]; then
+            echo "Deadlock! Stopping..."
+            break
+        fi
+    done
+done
+
+
+6) Producer
+#!/bin/bash
+
+buffer=0
+full=0
+
+produce() {
+    if [ $full -eq 1 ]; then
+        echo "Buffer is Full"
+    else
+        read -p "Enter the value: " buffer
+        full=1
+    fi
+}
+
+consume() {
+    if [ $full -eq 0 ]; then
+        echo "Buffer is Empty"
+    else
+        echo "The consumed value is $buffer"
+        buffer=0
+        full=0
+    fi
+}
+
+while true; do
+    echo -e "\n1. Produce\t2. Consume\t3. Exit"
+    read -p "Enter your choice: " choice
+
+    case $choice in
+        1) produce ;;
+        2) consume ;;
+        3) exit 0 ;;
+        *) echo "Invalid choice" ;;
+    esac
+done
+
+7) MFT
+
+#!/bin/bash
+
+read -p "Enter total memory size: " total
+read -p "Enter block size: " block
+
+blocks=$((total / block))
+echo "Number of blocks: $blocks"
+
+read -p "Enter number of processes: " p
+
+internal=0
+used=0
+mem=()
+
+for ((i=1; i<=p; i++)); do
+    read -p "Memory required for P$i: " mem[i]
+done
+
+echo -e "\nPROCESS   MEM_REQ   ALLOCATED   INT_FRAG"
+
+for ((i=1; i<=p && used<blocks; i++)); do
+    if [ ${mem[i]} -le $block ]; then
+        frag=$((block - mem[i]))
+        internal=$((internal + frag))
+        used=$((used+1))
+        echo "P$i        ${mem[i]}        YES        $frag"
+    else
+        echo "P$i        ${mem[i]}        NO         -----"
+    fi
+done
+
+for ((; i<=p; i++)); do
+    echo "P$i        ${mem[i]}        NO         -----"
+done
+
+external=$((total - used*block))
+echo -e "\nTotal Internal Fragmentation: $internal"
+echo "Total External Fragmentation: $external"
+
+8)MVT
+
+#!/bin/bash
+# MVT (Multiprogramming with Variable Tasks) Algorithm Simulation
+echo "Enter total memory available (in Bytes)--"
+read ms
+total=$ms
+allocated=0
+declare -a process
+declare -a mem
+
+i=0
+while [ $ms -gt 0 ]
+do
+    echo "Enter memory required for process $((i+1)) (in Bytes)--"
+    read req
+    if [ $req -le $ms ]
+    then
+        process[$i]=$((i+1))
+        mem[$i]=$req
+        ms=$((ms - req))
+        allocated=$((allocated + req))
+        echo "Memory is allocated for Process $((i+1))"
+    else
+        echo "Memory is Full"
+        break
+    fi
+    echo "Do you want to continue (y/n)--"
+    read choice
+    if [ "$choice" = "n" ]
+    then
+        break
+    fi
+    i=$((i+1))
+done
+
+echo
+echo "Total Memory Available = $total"
+echo
+echo "PROCESS   MEMORY ALLOCATED"
+for j in $(seq 0 $i)
+do
+    echo "   ${process[$j]}          ${mem[$j]}"
+done
+echo
+echo "Total Memory Allocated = $allocated"
+extfrag=$((total - allocated))
+echo "Total External Fragmentation = $extfrag"
+
+
+9) firstFit
+
+#!/bin/bash
+
+echo -n "Enter number of blocks: "
+read nb
+echo -n "Enter number of files: "
+read nf
+
+declare -a block file allocation fragment used_block
+
+echo "Enter block sizes:"
+for ((i=0;i<nb;i++)); do
+  read -p "Block $((i+1)): " block[$i]
+done
+
+echo "Enter file sizes:"
+for ((i=0;i<nf;i++)); do
+  read -p "File $((i+1)): " file[$i]
+done
+
+for ((i=0;i<nf;i++)); do
+  allocation[$i]=-1
+  for ((j=0;j<nb;j++)); do
+    if [ ${block[$j]} -ge ${file[$i]} ]; then
+      allocation[$i]=$j
+      fragment[$i]=$((block[$j]-file[$i]))
+      used_block[$i]=${block[$j]}
+      block[$j]=-1
+      break
+    fi
+  done
+done
+
+echo -e "\nFileNo\tFileSize\tBlockNo\tBlockSize\tFragment"
+for ((i=0;i<nf;i++)); do
+  if [ ${allocation[$i]} -ne -1 ]; then
+    echo -e "$((i+1))\t${file[$i]}\t\t$((allocation[$i]+1))\t${used_block[$i]}\t\t${fragment[$i]}"
+  else
+    echo -e "$((i+1))\t${file[$i]}\t\tNot Allocated"
+  fi
+done
+
+10) bestfit
+
+#!/bin/bash
+
+echo -n "Enter number of blocks: "
+read nb
+echo -n "Enter number of files: "
+read nf
+
+declare -a block file allocation fragment used_block
+
+echo "Enter block sizes:"
+for ((i=0;i<nb;i++)); do
+  read -p "Block $((i+1)): " block[$i]
+done
+
+echo "Enter file sizes:"
+for ((i=0;i<nf;i++)); do
+  read -p "File $((i+1)): " file[$i]
+done
+
+for ((i=0;i<nf;i++)); do
+  best=-1
+  for ((j=0;j<nb;j++)); do
+    if [ ${block[$j]} -ge ${file[$i]} ]; then
+      if [ $best -eq -1 ] || [ ${block[$j]} -lt ${block[$best]} ]; then
+        best=$j
+      fi
+    fi
+  done
+  if [ $best -ne -1 ]; then
+    allocation[$i]=$best
+    fragment[$i]=$((block[$best]-file[$i]))
+    used_block[$i]=${block[$best]}
+    block[$best]=-1
+  else
+    allocation[$i]=-1
+  fi
+done
+
+echo -e "\nFileNo\tFileSize\tBlockNo\tBlockSize\tFragment"
+for ((i=0;i<nf;i++)); do
+  if [ ${allocation[$i]} -ne -1 ]; then
+    echo -e "$((i+1))\t${file[$i]}\t\t$((allocation[$i]+1))\t${used_block[$i]}\t\t${fragment[$i]}"
+  else
+    echo -e "$((i+1))\t${file[$i]}\t\tNot Allocated"
+  fi
+done
+
+11) worstfit
+
+#!/bin/bash
+
+echo -n "Enter number of blocks: "
+read nb
+echo -n "Enter number of files: "
+read nf
+
+declare -a block file allocation fragment used_block
+
+echo "Enter block sizes:"
+for ((i=0;i<nb;i++)); do
+  read -p "Block $((i+1)): " block[$i]
+done
+
+echo "Enter file sizes:"
+for ((i=0;i<nf;i++)); do
+  read -p "File $((i+1)): " file[$i]
+done
+
+for ((i=0;i<nf;i++)); do
+  worst=-1
+  for ((j=0;j<nb;j++)); do
+    if [ ${block[$j]} -ge ${file[$i]} ]; then
+      if [ $worst -eq -1 ] || [ ${block[$j]} -gt ${block[$worst]} ]; then
+        worst=$j
+      fi
+    fi
+  done
+  if [ $worst -ne -1 ]; then
+    allocation[$i]=$worst
+    fragment[$i]=$((block[$worst]-file[$i]))
+    used_block[$i]=${block[$worst]}
+    block[$worst]=-1
+  else
+    allocation[$i]=-1
+  fi
+done
+
+echo -e "\nFileNo\tFileSize\tBlockNo\tBlockSize\tFragment"
+for ((i=0;i<nf;i++)); do
+  if [ ${allocation[$i]} -ne -1 ]; then
+    echo -e "$((i+1))\t${file[$i]}\t\t$((allocation[$i]+1))\t${used_block[$i]}\t\t${fragment[$i]}"
+  else
+    echo -e "$((i+1))\t${file[$i]}\t\tNot Allocated"
+  fi
+done
+
+
+12)FIFo
+
+#!/bin/bash
+# FIFO Page Replacement
+
+read -p "Enter number of frames: " f
+read -p "Enter number of pages: " n
+echo "Enter the reference string (space separated): "
+read -a pages
+
+frame=()
+page_faults=0
+front=0
+
+for ((i=0; i<n; i++))
+do
+    found=0
+    for val in "${frame[@]}"; do
+        if [ "$val" -eq "${pages[$i]}" ]; then
+            found=1
+            break
+        fi
+    done
+
+    if [ $found -eq 0 ]; then
+        if [ ${#frame[@]} -lt $f ]; then
+            frame+=("${pages[$i]}")
+        else
+            frame[$front]=${pages[$i]}
+            front=$(( (front+1) % f ))
+        fi
+        page_faults=$((page_faults+1))
+    fi
+    echo "Frame: ${frame[@]}"
+done
+
+echo "Total Page Faults = $page_faults"
+
+
+13) LRU
+
+#!/bin/bash
+# LRU Page Replacement
+
+read -p "Enter number of frames: " f
+read -p "Enter number of pages: " n
+echo "Enter the reference string (space separated): "
+read -a pages
+
+frame=()
+page_faults=0
+declare -A recent
+
+for ((i=0; i<n; i++))
+do
+    found=0
+    for val in "${frame[@]}"; do
+        if [ "$val" -eq "${pages[$i]}" ]; then
+            found=1
+            break
+        fi
+    done
+
+    if [ $found -eq 0 ]; then
+        if [ ${#frame[@]} -lt $f ]; then
+            frame+=("${pages[$i]}")
+        else
+            lru_index=0
+            min=${recent[${frame[0]}]}
+            for ((k=0; k<${#frame[@]}; k++)); do
+                if [ ${recent[${frame[$k]}]} -lt $min ]; then
+                    min=${recent[${frame[$k]}]}
+                    lru_index=$k
+                fi
+            done
+            frame[$lru_index]=${pages[$i]}
+        fi
+        page_faults=$((page_faults+1))
+    fi
+    recent[${pages[$i]}]=$i
+    echo "Frame: ${frame[@]}"
+done
+
+echo "Total Page Faults = $page_faults"
+
+14)optimal
+
+#!/bin/bash
+# Optimal Page Replacement
+
+read -p "Enter number of frames: " f
+read -p "Enter number of pages: " n
+echo "Enter the reference string (space separated): "
+read -a pages
+
+frame=()
+page_faults=0
+
+for ((i=0; i<n; i++))
+do
+    found=0
+    for val in "${frame[@]}"; do
+        if [ "$val" -eq "${pages[$i]}" ]; then
+            found=1
+            break
+        fi
+    done
+
+    if [ $found -eq 0 ]; then
+        if [ ${#frame[@]} -lt $f ]; then
+            frame+=("${pages[$i]}")
+        else
+            farthest=-1
+            replace_index=0
+            for ((k=0; k<${#frame[@]}; k++)); do
+                next=-1
+                for ((j=i+1; j<n; j++)); do
+                    if [ ${frame[$k]} -eq ${pages[$j]} ]; then
+                        next=$j
+                        break
+                    fi
+                done
+                if [ $next -eq -1 ]; then
+                    replace_index=$k
+                    break
+                elif [ $next -gt $farthest ]; then
+                    farthest=$next
+                    replace_index=$k
+                fi
+            done
+            frame[$replace_index]=${pages[$i]}
+        fi
+        page_faults=$((page_faults+1))
+    fi
+    echo "Frame: ${frame[@]}"
+done
+
+echo "Total Page Faults = $page_faults"
+
+15) single level
+
+#!/bin/bash
+# Single Level Directory Simulation
+
+declare -A directory
+
+while true
+do
+  echo -e "\n1. Create File\n2. Delete File\n3. Search File\n4. Display Files\n5. Exit"
+  read -p "Enter choice: " ch
+  case $ch in
+    1)
+      read -p "Enter file name: " name
+      if [ "${directory[$name]}" ]; then
+        echo "File already exists!"
+      else
+        directory[$name]=1
+        echo "File '$name' created."
+      fi
+      ;;
+    2)
+      read -p "Enter file name to delete: " name
+      if [ "${directory[$name]}" ]; then
+        unset directory[$name]
+        echo "File '$name' deleted."
+      else
+        echo "File not found."
+      fi
+      ;;
+    3)
+      read -p "Enter file name to search: " name
+      if [ "${directory[$name]}" ]; then
+        echo "File '$name' found."
+      else
+        echo "File not found."
+      fi
+      ;;
+    4)
+      echo "Files: ${!directory[@]}"
+      ;;
+    5)
+      exit ;;
+    *)
+      echo "Invalid choice" ;;
+  esac
+done
+
+
+16) two level
+
+#!/bin/bash
+# Two Level Directory Simulation
+
+declare -A users
+
+while true
+do
+  echo -e "\n1. Create User\n2. Create File\n3. Delete File\n4. Search File\n5. Display User Files\n6. Exit"
+  read -p "Enter choice: " ch
+
+  case $ch in
+    1)
+      read -p "Enter username: " user
+      if [ "${users[$user]}" ]; then
+        echo "User already exists!"
+      else
+        users[$user]=""
+        echo "User '$user' created."
+      fi
+      ;;
+    2)
+      read -p "Enter username: " user
+      if [ "${users[$user]}" ]; then
+        read -p "Enter filename: " file
+        users[$user]="${users[$user]} $file"
+        echo "File '$file' created under user '$user'."
+      else
+        echo "User not found!"
+      fi
+      ;;
+    3)
+      read -p "Enter username: " user
+      read -p "Enter filename to delete: " file
+      files=${users[$user]}
+      users[$user]=$(echo $files | sed "s/\b$file\b//g")
+      echo "File '$file' deleted (if existed)."
+      ;;
+    4)
+      read -p "Enter username: " user
+      read -p "Enter filename to search: " file
+      if echo "${users[$user]}" | grep -wq "$file"; then
+        echo "File '$file' found under user '$user'."
+      else
+        echo "File not found."
+      fi
+      ;;
+    5)
+      for user in "${!users[@]}"; do
+        echo "User: $user → Files: ${users[$user]}"
+      done
+      ;;
+    6)
+      exit ;;
+    *)
+      echo "Invalid choice" ;;
+  esac
+done
